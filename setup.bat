@@ -1,52 +1,76 @@
 @echo off
-echo Configurando entorno virtual para Whisper Local API...
+SETLOCAL EnableDelayedExpansion
 
-REM Verificar si Python está instalado
+echo Configurando entorno virtual de Python...
+
+:: Verificar si Python está instalado
 python --version >nul 2>&1
 if errorlevel 1 (
-    echo Error: Python no esta instalado. Por favor, instalalo primero.
+    echo Error: Python no está instalado o no está en el PATH
+    echo Por favor, instala Python desde https://www.python.org/downloads/
     exit /b 1
 )
 
-REM Verificar si pip está instalado
-pip --version >nul 2>&1
+:: Verificar si ffmpeg está instalado
+ffmpeg -version >nul 2>&1
 if errorlevel 1 (
-    echo Error: pip no esta instalado. Por favor, instalalo primero.
+    echo Error: FFmpeg no está instalado o no está en el PATH
+    echo Por favor, instala FFmpeg desde https://ffmpeg.org/download.html
+    echo y agrega la carpeta bin al PATH del sistema
     exit /b 1
 )
 
-REM Crear entorno virtual
-echo Creando entorno virtual...
-python -m venv .venv
+:: Crear entorno virtual si no existe
+if not exist .venv (
+    echo Creando entorno virtual...
+    python -m venv .venv
+) else (
+    echo Entorno virtual ya existe
+)
 
-REM Activar entorno virtual
+:: Activar entorno virtual
 call .venv\Scripts\activate.bat
 
-REM Instalar/Actualizar pip
+:: Actualizar pip
 echo Actualizando pip...
 python -m pip install --upgrade pip
 
-REM Instalar poetry si no está instalado
-poetry --version >nul 2>&1
-if errorlevel 1 (
-    echo Instalando Poetry...
-    curl -sSL https://install.python-poetry.org | python -
-)
-
-REM Configurar Poetry para usar el entorno virtual en el proyecto
-poetry config virtualenvs.in-project true
-
-REM Instalar dependencias con Poetry
+:: Instalar dependencias
 echo Instalando dependencias...
-poetry install
+pip install torch --index-url https://download.pytorch.org/whl/cpu
+pip install openai-whisper
+pip install fastapi
+pip install python-multipart
+pip install uvicorn
+pip install python-dotenv
+pip install numpy
+pip install soundfile
+pip install scipy
 
-REM Crear archivo .env si no existe
+:: Crear archivo .env si no existe
 if not exist .env (
     echo Creando archivo .env...
-    copy .env.example .env
-    echo Por favor, edita el archivo .env con tu configuracion
+    echo API_KEY=5d93bb84-d748-4236-f203-5ec3673c7b9e> .env
+    echo HOST=0.0.0.0>> .env
+    echo PORT=8000>> .env
+    echo WHISPER_MODEL=small>> .env
+) else (
+    echo Archivo .env ya existe
 )
 
-echo Configuracion completada!
-echo Para activar el entorno virtual:
-echo .venv\Scripts\activate.bat
+echo.
+echo Instalación completada exitosamente!
+echo.
+echo Para iniciar el servidor:
+echo 1. Activa el entorno virtual: .venv\Scripts\activate.bat
+echo 2. Ejecuta: python api_server.py
+echo.
+echo Para hacer una prueba:
+echo curl -X POST "http://localhost:8000/transcribe/" ^
+    -H "Authorization: Bearer 5d93bb84-d748-4236-f203-5ec3673c7b9e" ^
+    -H "accept: application/json" ^
+    -H "Content-Type: multipart/form-data" ^
+    -F "file=@tu-archivo.wav" ^
+    -F "language=es"
+
+pause

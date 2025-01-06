@@ -1,156 +1,148 @@
 # Whisper Local API
 
-Servidor API local para transcripción de audio usando Whisper de OpenAI.
+Una implementación local de la API de Whisper para transcripción de audio usando FastAPI.
 
-## Requisitos del Sistema
+## Características
 
-- Python 3.10 o superior
-- pip3
-- Conexión a internet (para la instalación inicial)
-- CPU multicore (optimizado para AMD Ryzen 5 5600G)
-- Mínimo 8GB RAM (recomendado 16GB+)
+- Transcripción de audio usando el modelo Whisper de OpenAI
+- Soporte para múltiples idiomas con detección automática
+- Preprocesamiento de audio para mejorar la calidad de transcripción
+- API RESTful con autenticación por token
+- Soporte para Windows y Linux
+
+## Requisitos
+
+- Python 3.8 o superior
+- FFmpeg (requerido para procesar archivos de audio)
+- Torch (CPU o GPU)
+- 2GB de espacio en disco para los modelos
 
 ## Instalación
 
-### Linux/macOS
-
-1. Clonar el repositorio:
-```bash
-git clone <repository-url>
-cd Whisper-local
-```
-
-2. Ejecutar el script de configuración:
-```bash
-chmod +x setup.sh
-./setup.sh
-```
-
-3. Activar el entorno virtual:
-```bash
-source .venv/bin/activate
-```
-
 ### Windows
 
-1. Clonar el repositorio:
-```cmd
-git clone <repository-url>
-cd Whisper-local
-```
+1. Instalar Python 3.8 o superior desde [python.org](https://www.python.org/downloads/)
 
-2. Ejecutar el script de configuración:
-```cmd
-setup.bat
-```
+2. Instalar FFmpeg:
+   - Descargar FFmpeg desde [ffmpeg.org](https://ffmpeg.org/download.html)
+   - Extraer el archivo zip
+   - Agregar la carpeta `bin` al PATH del sistema
 
-3. Activar el entorno virtual:
-```cmd
-.venv\Scripts\activate.bat
-```
+3. Clonar el repositorio:
+   ```bash
+   git clone https://github.com/tu-usuario/whisper-local.git
+   cd whisper-local
+   ```
 
-### Configuración
+4. Ejecutar el script de configuración:
+   ```bash
+   setup.bat
+   ```
 
-El script de configuración creará automáticamente un archivo `.env` basado en `.env.example`. Edita el archivo `.env` y configura las siguientes variables:
+### Linux
 
-- `API_KEY`: Tu clave de API para autenticación
-- `HOST`: Host donde se ejecutará el servidor (default: 0.0.0.0)
-- `PORT`: Puerto para el servidor (default: 8000)
-- `WHISPER_MODEL`: Modelo de Whisper a usar (default: base)
+1. Instalar dependencias del sistema:
+   ```bash
+   sudo apt update
+   sudo apt install python3-pip python3-venv ffmpeg
+   ```
+
+2. Clonar el repositorio y configurar:
+   ```bash
+   git clone https://github.com/tu-usuario/whisper-local.git
+   cd whisper-local
+   ./setup.sh
+   ```
+
+## Configuración
+
+1. Copiar `.env.example` a `.env`:
+   ```bash
+   cp .env.example .env
+   ```
+
+2. Editar `.env` con tus configuraciones:
+   ```
+   API_KEY=tu-api-key
+   HOST=0.0.0.0
+   PORT=8000
+   WHISPER_MODEL=small  # opciones: tiny, base, small, medium, large
+   ```
 
 ## Uso
 
-1. Activar el entorno virtual (si no está activado):
-```bash
-# Linux/macOS
-source .venv/bin/activate
+1. Iniciar el servidor:
+   ```bash
+   python api_server.py
+   ```
 
-# Windows
-.venv\Scripts\activate.bat
-```
+2. Hacer una petición de transcripción:
+   ```bash
+   curl -X POST "http://localhost:8000/transcribe/" \
+        -H "Authorization: Bearer tu-api-key" \
+        -H "accept: application/json" \
+        -H "Content-Type: multipart/form-data" \
+        -F "file=@tu-archivo.wav" \
+        -F "language=es"  # opcional
+   ```
 
-2. Iniciar el servidor API:
-```bash
-poetry run python api_server.py
-```
+## Modelos Disponibles
 
-El servidor se iniciará en `http://0.0.0.0:8000` (o la configuración especificada en `.env`)
-
-## Endpoints
-
-### 1. Verificar Estado del Servidor
-```bash
-curl -X GET "http://localhost:8000/" \
-     -H "Authorization: Bearer tu-api-key"
-```
-
-Respuesta:
-```json
-{
-    "status": "online",
-    "service": "Whisper Local API",
-    "model": "base"
-}
-```
-
-### 2. Transcribir Audio
-```bash
-# Transcribir audio en español
-curl -X POST "http://localhost:8000/transcribe/" \
-     -H "Authorization: Bearer tu-api-key" \
-     -H "accept: application/json" \
-     -H "Content-Type: multipart/form-data" \
-     -F "file=@audio.mp3" \
-     -F "language=es"
-
-# Traducir audio a inglés
-curl -X POST "http://localhost:8000/transcribe/" \
-     -H "Authorization: Bearer tu-api-key" \
-     -H "accept: application/json" \
-     -H "Content-Type: multipart/form-data" \
-     -F "file=@audio.mp3" \
-     -F "task=translate"
-```
-
-Respuesta:
-```json
-{
-    "text": "Transcripción del audio...",
-    "segments": [...],
-    "language": "es"
-}
-```
-
-## Formatos de Audio Soportados
-- MP3 (.mp3)
-- WAV (.wav)
-- M4A (.m4a)
-- OGG (.ogg)
-
-## Seguridad
-
-La API está protegida mediante autenticación Bearer token. Todas las solicitudes deben incluir el header:
-```
-Authorization: Bearer tu-api-key
-```
-
-La API key debe configurarse en el archivo `.env`. Por seguridad, nunca compartas tu archivo `.env` ni lo subas al control de versiones.
+- `tiny`: Más rápido, menos preciso (~1GB RAM)
+- `base`: Balance entre velocidad y precisión (~1GB RAM)
+- `small`: Mejor precisión, más lento (~2GB RAM)
+- `medium`: Alta precisión, muy lento (~5GB RAM)
+- `large`: Máxima precisión, extremadamente lento (~10GB RAM)
 
 ## Solución de Problemas
 
-### Error al activar el entorno virtual en Windows
-Si PowerShell muestra un error de permisos al activar el entorno virtual, ejecuta:
-```powershell
-Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-```
+### Windows
 
-### Error de Poetry no encontrado
-Si después de instalar Poetry el comando no es reconocido, reinicia tu terminal o agrega Poetry al PATH manualmente.
+1. Error "FFmpeg not found":
+   - Verificar que FFmpeg está en el PATH
+   - Reiniciar la terminal después de agregar FFmpeg al PATH
 
-## Notas
+2. Error de CUDA:
+   - Por defecto se usa CPU
+   - Para GPU, instalar CUDA Toolkit y cuDNN
+   - Actualizar torch con soporte CUDA: `pip install torch --index-url https://download.pytorch.org/whl/cu118`
 
-- El servidor está configurado para usar CPU principalmente
-- Utiliza multiprocessing para optimizar el rendimiento en CPU multicore
-- Por defecto usa el modelo "base" de Whisper para balance entre precisión y recursos
-- Todos los endpoints requieren autenticación Bearer
-- El entorno virtual (.venv) aísla las dependencias del proyecto del sistema principal
+3. Error de tipos de datos:
+   - Asegurarse de tener instalado scipy: `pip install scipy`
+   - Los archivos de audio deben estar en formato WAV o MP3
+
+### Linux
+
+1. Error de permisos FFmpeg:
+   ```bash
+   sudo chmod +x /usr/bin/ffmpeg
+   ```
+
+2. Error de memoria:
+   - Usar un modelo más pequeño en `.env`
+   - Cerrar aplicaciones innecesarias
+
+## Notas de Desarrollo
+
+- El preprocesamiento de audio incluye:
+  - Normalización de amplitud
+  - Filtrado de frecuencias para voz (300-3000 Hz)
+  - Reducción de ruido básica
+
+- Parámetros de transcripción optimizados:
+  - `temperature=0`: Más determinístico
+  - `best_of=5`: Mejores resultados
+  - `beam_size=5`: Mejor decodificación
+  - `condition_on_previous_text=True`: Usa contexto
+
+## Contribuir
+
+1. Fork el repositorio
+2. Crear una rama para tu feature
+3. Commit tus cambios
+4. Push a la rama
+5. Crear un Pull Request
+
+## Licencia
+
+MIT
